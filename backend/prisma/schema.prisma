@@ -3,8 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
 }
 
 model Organization {
@@ -39,10 +38,10 @@ model Product {
 
   name              String
   sku               String
-  description       String?      @db.Text
+  description       String?
   quantityOnHand    Int          @default(0)
-  costPrice         Decimal?     @db.Decimal(10, 2)
-  sellingPrice      Decimal?     @db.Decimal(10, 2)
+  costPrice         Float?
+  sellingPrice      Float?
   lowStockThreshold Int?
 
   lastUpdatedBy     String?
