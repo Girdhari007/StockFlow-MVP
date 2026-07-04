@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                       String   @id @default(uuid())
+  name                     String
+  defaultLowStockThreshold Int      @default(5)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  users    User[]
+  products Product[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String       @id @default(uuid())
+  email          String       @unique
+  passwordHash   String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("users")
+}
+
+model Product {
+  id                String       @id @default(uuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+
+  name              String
+  sku               String
+  description       String?      @db.Text
+  quantityOnHand    Int          @default(0)
+  costPrice         Decimal?     @db.Decimal(10, 2)
+  sellingPrice      Decimal?     @db.Decimal(10, 2)
+  lowStockThreshold Int?
+
+  lastUpdatedBy     String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  // SKU must be unique per organization, not globally
+  @@unique([organizationId, sku])
+  @@index([organizationId])
+  @@map("products")
+}
