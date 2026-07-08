@@ -1,55 +1,71 @@
+// Prisma schema for StockFlow portfolio management system
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-}
-
-model Organization {
-  id                       String   @id @default(uuid())
-  name                     String
-  defaultLowStockThreshold Int      @default(5)
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
-
-  users    User[]
-  products Product[]
-
-  @@map("organizations")
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id             String       @id @default(uuid())
-  email          String       @unique
-  passwordHash   String
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@map("users")
+  portfolio Portfolio?
+  transactions Transaction[]
 }
 
-model Product {
-  id                String       @id @default(uuid())
-  organizationId    String
-  organization      Organization @relation(fields: [organizationId], references: [id])
+model Portfolio {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalValue Float  @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  name              String
-  sku               String
-  description       String?
-  quantityOnHand    Int          @default(0)
-  costPrice         Float?
-  sellingPrice      Float?
-  lowStockThreshold Int?
+  holdings  Holding[]
+}
 
-  lastUpdatedBy     String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+model Holding {
+  id        Int     @id @default(autoincrement())
+  portfolioId Int
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  stockId   Int
+  stock     Stock   @relation(fields: [stockId], references: [id])
+  quantity  Int
+  avgCost   Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // SKU must be unique per organization, not globally
-  @@unique([organizationId, sku])
-  @@index([organizationId])
-  @@map("products")
+  @@unique([portfolioId, stockId])
+}
+
+model Stock {
+  id        Int     @id @default(autoincrement())
+  symbol    String  @unique
+  name      String
+  currentPrice Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  holdings  Holding[]
+  transactions Transaction[]
+}
+
+model Transaction {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stockId   Int
+  stock     Stock   @relation(fields: [stockId], references: [id])
+  type      String
+  quantity  Int
+  price     Float
+  total     Float
+  createdAt DateTime @default(now())
 }
